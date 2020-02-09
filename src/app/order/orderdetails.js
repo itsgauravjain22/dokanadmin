@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Clipboard, Image, ScrollView, ActivityIndicator, Modal, ToastAndroid } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Clipboard, Image, ScrollView, ActivityIndicator, Modal, ToastAndroid, Alert } from 'react-native';
 import Moment from 'moment';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import RadioButtons from '../commoncomponents/radiobuttons'
 import GLOBAL from './orderglobal'
+import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
 
@@ -17,13 +19,14 @@ export default class OrderDetails extends Component {
             error: null,
             orderStatusOptions: null,
             orderStatusValue: null,
-            orderStatusModalShown: false
+            orderStatusModalShown: false,
+            base_url: null,
+            username: null,
+            password: null
         };
         GLOBAL.orderdetailsScreen = this;
         orderId = this.props.navigation.getParam('orderId');
-        base_url = this.props.navigation.getParam('base_url');
-        c_key = this.props.navigation.getParam('c_key');
-        c_secret = this.props.navigation.getParam('c_secret');
+        this._isMounted = false;
     }
 
     static navigationOptions = ({ navigation }) => {
@@ -32,10 +35,22 @@ export default class OrderDetails extends Component {
         };
     };
 
-    componentDidMount() {
+    async componentDidMount() {
+        this._isMounted = true;
+        this._isMounted && await this.getCredentials();
         this.focusListener = this.props.navigation.addListener('didFocus', () => {
             this.fetchOrderDetails()
         });
+    }
+
+    getCredentials = async () => {
+        const credentials = await SecureStore.getItemAsync('credentials');
+        const credentialsJson = JSON.parse(credentials)
+        this.setState({
+            base_url: credentialsJson.base_url,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
+        })
     }
 
     render() {
@@ -45,24 +60,42 @@ export default class OrderDetails extends Component {
                     <ActivityIndicator color={config.colors.loadingColor} size='large' />
                 </View>
             )
+        } else {
+            if (!this.state.error) {
+                return (
+                    <ScrollView style={{ flex: 1 }}>
+                        {this.displayOrderDataSection()}
+                        {this.displayProductSection()}
+                        {this.displayPaymentSection()}
+                        {this.displayShippingDetailsSection()}
+                        {this.displayBillingDetailsSection()}
+                    </ScrollView>
+                );
+            } else {
+                return (
+                    <View>
+                        <Text>
+                            {this.state.error.toString()}
+                        </Text>
+                    </View>
+                )
+            }
         }
-
-        return (
-            <ScrollView style={{ flex: 1 }}>
-                {this.displayOrderDataSection()}
-                {this.displayProductSection()}
-                {this.displayPaymentSection()}
-                {this.displayShippingDetailsSection()}
-                {this.displayBillingDetailsSection()}
-            </ScrollView>
-        );
     }
 
     fetchOrderDetails = () => {
-        const url = `${base_url}/wp-json/wc/v3/orders/${orderId}?consumer_key=${c_key}&consumer_secret=${c_secret}`;
+        const { base_url, username, password } = this.state;
+        let url = `${base_url}/wp-json/dokan/v1/orders/${orderId}`;
+        const headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
         this.setState({ loading: true });
-        fetch(url).then((response) => response.json())
+        fetch(url, {
+            method: 'GET',
+            headers: headers
+        }).then((response) => response.json())
             .then((responseJson) => {
+                console.log(responseJson)
                 this.setState({
                     orderData: responseJson,
                     error: responseJson.code || null,
@@ -76,16 +109,23 @@ export default class OrderDetails extends Component {
     }
 
     fetchOrderStatus = () => {
-        const orderStatusesurl = `${base_url}/wp-json/wc/v3/reports/orders/totals?consumer_key=${c_key}&consumer_secret=${c_secret}`;
-        fetch(orderStatusesurl).then(response => response.json())
+        const { base_url, username, password } = this.state;
+        const orderStatusesurl = `${base_url}/wp-json/dokan/v1/orders/summary`;
+        const headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
+        fetch(orderStatusesurl, {
+            method: 'GET',
+            headers: headers
+        }).then(response => response.json())
             .then(responseJson => {
                 let orderStatusMap = new Map();
-                if (Array.isArray(responseJson) && responseJson.length > 0) {
-                    if ('slug' in responseJson[0] && 'name' in responseJson[0]) {
-                        responseJson.forEach(item => {
-                            orderStatusMap.set(item.slug, item.name)
-                        })
-                    }
+                if (responseJson) {
+                    Object.keys(responseJson).forEach(key => {
+                        if (key != 'total') {
+                            orderStatusMap.set(key, key)
+                        }
+                    })
                 }
                 this.setState({
                     orderStatusOptions: [...orderStatusMap],
@@ -102,9 +142,16 @@ export default class OrderDetails extends Component {
     }
 
     fetchProductPrimaryImage = (productId, index) => {
+        const { base_url, username, password } = this.state;
         this.setState({ imageLoading: true });
-        let url = `${base_url}/wp-json/wc/v3/products/${productId}?consumer_key=${c_key}&consumer_secret=${c_secret}`
-        fetch(url)
+        let url = `${base_url}/wp-json/dokan/v1/products/${productId}`
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
+        fetch(url, {
+            method: 'GET',
+            headers: headers
+        })
             .then((response) => response.json())
             .then(responseJson => {
                 if ('images' in responseJson && Array.isArray(responseJson.images) && responseJson.images.length) {
@@ -167,7 +214,7 @@ export default class OrderDetails extends Component {
     getCurrencySymbol = () => {
         return (this.state.orderData.currency_symbol)
             ? this.state.orderData.currency_symbol
-            : this.state.orderData.currency;
+            : `${this.state.orderData.currency} `;
     }
 
     //Get optionally TM Product Options Fees Total
@@ -210,18 +257,17 @@ export default class OrderDetails extends Component {
     //Update Functions Below
 
     updateOrderStatus = () => {
-        const url = `${base_url}/wp-json/wc/v3/orders/${orderId}?consumer_key=${c_key}&consumer_secret=${c_secret}`;
+        const { base_url, username, password } = this.state;
+        const url = `${base_url}/wp-json/dokan/v1/orders/${orderId}?status=${this.state.orderStatusValue}`;
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
         fetch(url, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                "status": this.state.orderStatusValue
-            })
+            headers: headers
         }).then((response) => response.json())
             .then(responseJson => {
-                if ('code' in responseJson)
+                if ('message' in responseJson)
                     ToastAndroid.show(`Order Not Updated. Error: ${responseJson.message}`, ToastAndroid.LONG);
                 else if ('status' in responseJson) {
                     this.setState({
@@ -262,7 +308,7 @@ export default class OrderDetails extends Component {
                         <Text style={styles.modalTitleText}>Change Order Status</Text>
                         <RadioButtons
                             options={this.state.orderStatusOptions}
-                            value={this.state.orderData.status}
+                            value={`wc-${this.state.orderData.status}`}
                             selectedValue={(selectedValue) => {
                                 this.setState({
                                     orderStatusValue: selectedValue
@@ -307,7 +353,7 @@ export default class OrderDetails extends Component {
                 <Text>Created at {Moment(this.state.orderData.date_created).format('D/MM/YYYY h:m:s a')}</Text>
                 <View style={{ flex: 1, flexDirection: 'row' }}>
                     <View style={{ width: '90%' }}>
-                        <Text>Order Status: {this.state.orderData.status}</Text>
+                        <Text>Order Status: wc-{this.state.orderData.status}</Text>
                     </View>
                     <View style={{ width: '10%', justifyContent: 'center', alignItems: 'center' }}>
                         <TouchableOpacity

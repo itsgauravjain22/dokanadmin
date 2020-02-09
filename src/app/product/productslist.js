@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import GLOBAL from './productglobal'
 import { Ionicons } from '@expo/vector-icons';
 import SearchBar from '../commoncomponents/searchbar'
+import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
 
@@ -34,8 +35,8 @@ export default class ProductsList extends Component {
             error: null,
             refreshing: false,
             base_url: null,
-            c_key: null,
-            c_secret: null,
+            username: null,
+            password: null,
         };
         GLOBAL.productslistScreen = this;
         this._isMounted = false;
@@ -56,47 +57,55 @@ export default class ProductsList extends Component {
         const credentialsJson = JSON.parse(credentials)
         this.setState({
             base_url: credentialsJson.base_url,
-            c_key: credentialsJson.c_key,
-            c_secret: credentialsJson.c_secret,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
         })
     }
 
     fetchProductList = () => {
-        const { base_url, c_key, c_secret, page, searchValue } = this.state;
-        let url = null
+        const { base_url, username, password, page, searchValue } = this.state;
+        let url = ''
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
         if (searchValue) {
-            url = `${base_url}/wp-json/wc/v3/products?per_page=20&search=${searchValue}&page=${page}&consumer_key=${c_key}&consumer_secret=${c_secret}`;
+            url = `${base_url}/wp-json/dokan/v1/products?per_page=20&search=${searchValue}&page=${page}`;
         } else {
-            url = `${base_url}/wp-json/wc/v3/products?per_page=20&page=${page}&consumer_key=${c_key}&consumer_secret=${c_secret}`;
+            url = `${base_url}/wp-json/dokan/v1/products?per_page=20&page=${page}`;
         }
         this.setState({ loading: true });
-        fetch(url).then((response) => response.json())
-            .then((responseJson) => {
-                if (Array.isArray(responseJson) && responseJson.length) {
-                    this.setState({
-                        hasMoreToLoad: true,
-                        data: this.state.data.concat(responseJson),
-                        error: responseJson.code || null,
-                        loading: false,
-                        refreshing: false
-                    });
-                } else {
+        setTimeout(() => {
+            fetch(url, {
+                method: 'GET',
+                headers: headers
+            }).then((response) => response.json())
+                .then((responseJson) => {
+                    if (Array.isArray(responseJson) && responseJson.length) {
+                        this.setState({
+                            hasMoreToLoad: true,
+                            data: this.state.data.concat(responseJson),
+                            error: responseJson.code || null,
+                            loading: false,
+                            refreshing: false
+                        });
+                    } else {
+                        this.setState({
+                            hasMoreToLoad: false,
+                            error: responseJson.code || null,
+                            loading: false,
+                            refreshing: false
+                        });
+                    }
+                }).catch((error) => {
                     this.setState({
                         hasMoreToLoad: false,
-                        error: responseJson.code || null,
+                        error,
                         loading: false,
                         refreshing: false
-                    });
-                }
-            }).catch((error) => {
-                this.setState({
-                    hasMoreToLoad: false,
-                    error,
-                    loading: false,
-                    refreshing: false
-                })
-            });
-    };
+                    })
+                });
+        }, 1000)
+    }
 
     renderListSeparator = () => {
         return (
@@ -156,9 +165,6 @@ export default class ProductsList extends Component {
                 this.props.navigation.navigate('ProductDetails', {
                     productId: item.id,
                     productName: item.name,
-                    base_url: this.state.base_url,
-                    c_key: this.state.c_key,
-                    c_secret: this.state.c_secret
                 });
             }}>
                 <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'white' }}>

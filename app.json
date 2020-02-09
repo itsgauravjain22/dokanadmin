@@ -1,22 +1,22 @@
 {
-  "name": "wooadmin",
-  "displayName": "WooAdmin",
+  "name": "dokanadmin",
+  "displayName": "DokanAdmin",
   "expo": {
-    "name": "WooAdmin",
-    "slug": "wooadmin",
+    "name": "DokanAdmin",
+    "slug": "dokanadmin",
     "privacy": "public",
     "sdkVersion": "36.0.0",
-    "version": "1.0.2",
+    "version": "1.0.0",
     "entryPoint": "./node_modules/expo/AppEntry.js",
     "platforms": [
       "android"
     ],
-    "githubUrl": "https://github.com/itsgauravjain22/wooadmin",
+    "githubUrl": "https://github.com/itsgauravjain22/dokanadmin",
     "icon": "./assets/images/logo.png",
-    "description": "A react native woocommerce admin app.",
+    "description": "A react native dokan admin app.",
     "android": {
-      "package": "com.wooadmin.wooadmin",
-      "versionCode": 3,
+      "package": "com.dokanadmin.dokanadmin",
+      "versionCode": 1,
       "permissions": [
         "CAMERA"
       ]
@@ -28,8 +28,8 @@
           "file": "sentry-expo/upload-sourcemaps",
           "config": {
             "organization": "gaurav-jain-apps",
-            "project": "wooadmin",
-            "authToken": "1f61a15c83fb4824b179aef5d2db166e3bf2f81cf202430da962591229c9f1fa"
+            "project": "dokanadmin",
+            "authToken": "7b474994126d436f807d4e1ffb929e214082e01ccc6748b19763e13ec22c647f"
           }
         }
       ]

@@ -1,24 +1,23 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
-import Moment from 'moment';
-import * as SecureStore from 'expo-secure-store';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import GLOBAL from './customerglobal'
-import SearchBar from '../commoncomponents/searchbar'
+import * as SecureStore from 'expo-secure-store';
+import Base64 from '../../utility/base64';
+import Moment from 'moment';
 
 const config = require('../../../config.json');
 
-export default class OrdersList extends Component {
+export default class ProductsList extends Component {
 
     static navigationOptions = ({ navigation }) => {
         return {
-            headerTitle: 'Customers',
+            headerTitle: 'Reviews',
             headerRight: () => (
                 <TouchableOpacity
                     style={{ paddingRight: 20 }}
                     onPress={() => { navigation.navigate("Settings") }}
                 >
-                    <Ionicons name='md-more' size={25} color={config.colors.headerRightColor} />
+                    <Ionicons name='md-more' size={25} color={config.colors.iconLightColor} />
                 </TouchableOpacity>
             ),
         }
@@ -29,23 +28,21 @@ export default class OrdersList extends Component {
         this.state = {
             loading: false,
             hasMoreToLoad: true,
-            searchValue: '',
             data: [],
             page: 1,
             error: null,
             refreshing: false,
             base_url: null,
-            c_key: null,
-            c_secret: null,
+            username: null,
+            password: null,
         };
-        GLOBAL.customerslistScreen = this
         this._isMounted = false;
     }
 
     async componentDidMount() {
         this._isMounted = true;
         this._isMounted && await this.getCredentials();
-        this._isMounted && this.fetchCustomersList();
+        this._isMounted && this.fetchReviewsList();
     }
 
     componentWillUnmount() {
@@ -57,21 +54,23 @@ export default class OrdersList extends Component {
         const credentialsJson = JSON.parse(credentials)
         this.setState({
             base_url: credentialsJson.base_url,
-            c_key: credentialsJson.c_key,
-            c_secret: credentialsJson.c_secret,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
         })
     }
 
-    fetchCustomersList = () => {
-        const { base_url, c_key, c_secret, page, searchValue } = this.state;
-        let url = `${base_url}/wp-json/wc/v3/customers?page=${page}&consumer_key=${c_key}&consumer_secret=${c_secret}&order=desc&orderby=registered_date&per_page=20`;
-
-        if (searchValue) {
-            url = url.concat(`&search=${searchValue}`)
+    fetchReviewsList = () => {
+        const { base_url, username, password, page } = this.state;
+        let url = `${base_url}/wp-json/dokan/v1/reviews?per_page=20&page=${page}`;
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
         }
         this.setState({ loading: true });
         setTimeout(() => {
-            fetch(url).then((response) => response.json())
+            fetch(url, {
+                method: 'GET',
+                headers: headers
+            }).then((response) => response.json())
                 .then((responseJson) => {
                     if (Array.isArray(responseJson) && responseJson.length) {
                         this.setState({
@@ -97,8 +96,8 @@ export default class OrdersList extends Component {
                         refreshing: false
                     })
                 });
-        }, 1500);
-    };
+        }, 1000);
+    }
 
     renderListSeparator = () => {
         return (
@@ -129,7 +128,7 @@ export default class OrdersList extends Component {
             data: []
         },
             () => {
-                this.fetchCustomersList();
+                this.fetchReviewsList();
             }
         )
     }
@@ -138,58 +137,44 @@ export default class OrdersList extends Component {
         this.setState({
             page: this.state.page + 1,
         }, () => {
-            this.fetchCustomersList();
+            this.fetchReviewsList();
         }
         )
     }
 
-    handleSearch = (value) => {
-        this._isMounted && this.setState({
-            searchValue: value,
-            page: 1,
-            refreshing: true,
-            data: []
-        }, () => {
-            this.fetchCustomersList()
-        })
+    displayRatingStar = (starCount) => {
+        let ratingStars = []
+        for (let i = 1; i <= starCount; i++) {
+            ratingStars.push(
+                <Ionicons name="md-star" size={20} color={config.colors.ratingStarColor} />
+            )
+        }
+        return ratingStars
     }
 
     renderItem = ({ item }) => {
         return (
-            <TouchableOpacity onPress={() => {
-                this.props.navigation.navigate('CustomerDetails', {
-                    customerId: item.id,
-                });
-            }}>
-                <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'white' }}>
-                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        {item.avatar_url
-                            ? <Image
-                                source={{ uri: item.avatar_url }}
-                                style={{ height: 80, width: 80 }}
-                                resizeMode='contain'
-                            />
-                            : <Ionicons name='md-person' size={80} color='gray' />
-                        }
-                    </View>
-                    <View style={{ flex: 3, marginTop: 10, marginBottom: 10, justifyContent: "center" }}>
-                        <View style={{ marginLeft: 10 }}>
-                            <Text style={styles.titleText}>{item.username}</Text>
-                            <Text>Name: {item.first_name} {item.last_name}</Text>
-                            <Text>Email: {item.email}</Text>
-                            <Text>Is Paying: {item.is_paying_customer?'Yes':'No'}</Text>
-                            <Text>Created: {Moment(item.date_created).format('dddd, Do MMM YYYY h:m:s a')}</Text>
-                        </View>
-                    </View>
+            <View
+                style={{
+                    flex: 1,
+                    paddingTop: 10,
+                    paddingBottom: 10,
+                    backgroundColor: 'white',
+                    justifyContent: 'center',
+                }}>
+                <View style={{ marginLeft: 10 }}>
+                    <Text>{Moment(item.date_created).format('dddd, Do MMM YYYY h:m:s a')}</Text>
+                    <Text style={styles.titleText}>{item.name}</Text>
+                    <Text>{this.displayRatingStar(item.rating)}</Text>
+                    <Text>{item.review}</Text>
                 </View>
-            </TouchableOpacity>
+            </View>
         )
     }
 
     render() {
         return (
             <View style={{ flex: 1 }}>
-                <SearchBar onSearchPress={this.handleSearch}></SearchBar>
                 <FlatList
                     data={this.state.data}
                     keyExtractor={item => item.id.toString()}

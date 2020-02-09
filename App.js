@@ -12,14 +12,13 @@ import ProductDetails from './src/app/product/productdetails'
 import EditProduct from './src/app/product/editproduct'
 import OrdersList from './src/app/order/orderslist'
 import OrderDetails from './src/app/order/orderdetails';
-import CustomersList from './src/app/customer/customerslist'
-import CustomerDetails from './src/app/customer/customerdetails'
+import ReviewsList from './src/app/review/reviewslist'
 import Settings from './src/app/setting/settings'
 
 const config = require('./config.json');
 
 Sentry.init({
-  dsn: 'https://bfd12dd5d0464e70a4402c2562118815@sentry.io/2344328',
+  dsn: 'https://84d11b58d25f4b4cabfdd5fdc1669775@sentry.io/2349668',
   enableInExpoDevelopment: false,
   debug: true
 });
@@ -46,12 +45,10 @@ const SettingNavigator = createStackNavigator({
   }
 })
 
-const CustomerNavigator = createStackNavigator({
-  Customers: CustomersList,
-  CustomerDetails: CustomerDetails,
-  Settings: SettingNavigator,
+const ReviewsNavigator = createStackNavigator({
+  Reviews: ReviewsList
 }, {
-  initialRouteName: 'Customers',
+  initialRouteName: 'Reviews',
   defaultNavigationOptions: {
     headerStyle: {
       backgroundColor: config.colors.headerBackColor,
@@ -61,7 +58,7 @@ const CustomerNavigator = createStackNavigator({
       fontWeight: 'bold',
     }
   }
-});
+})
 
 const ProductNavigator = createStackNavigator({
   Products: ProductsList,
@@ -114,27 +111,33 @@ const reportNavigator = createStackNavigator({
   }
 });
 
-const TabNavigator = createBottomTabNavigator({
-  Reports: reportNavigator,
-  Orders: OrderNavigator,
-  Products: ProductNavigator,
-  Customers: CustomerNavigator
-},
+
+let TabNavigatorMenu = { Reports: reportNavigator }
+if (config.modules.ordersModuleEnabled) {
+  TabNavigatorMenu.Orders = OrderNavigator
+}
+if (config.modules.productsModuleEnabled) {
+  TabNavigatorMenu.Products = ProductNavigator
+}
+if (config.modules.reviewsModulesEnables) {
+  TabNavigatorMenu.Reviews = ReviewsNavigator
+}
+
+let TabNavigator = createBottomTabNavigator(TabNavigatorMenu,
   {
-    initialRouteName: 'Reports',
     defaultNavigationOptions: ({ navigation }) => ({
       tabBarIcon: ({ focused, horizontal, tintColor }) => {
         const { routeName } = navigation.state;
         let IconComponent = Ionicons;
         let iconName;
         if (routeName === 'Reports') {
-          iconName ='md-stats';
+          iconName = 'md-stats';
         } else if (routeName === 'Products') {
-          iconName ='md-card';
+          iconName = 'md-card';
         } else if (routeName === 'Orders') {
           iconName = 'md-paper';
-        }  else if (routeName === 'Customers') {
-          iconName = 'md-person';
+        } else if (routeName === 'Reviews') {
+          iconName = 'md-star';
         }
         return <IconComponent name={iconName} size={25} color={tintColor} />;
       }

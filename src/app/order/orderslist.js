@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import GLOBAL from './orderglobal'
 import SearchBar from '../commoncomponents/searchbar'
+import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
 
@@ -35,8 +36,8 @@ export default class OrdersList extends Component {
             error: null,
             refreshing: false,
             base_url: null,
-            c_key: null,
-            c_secret: null,
+            username: null,
+            password: null,
         };
         GLOBAL.orderslistScreen = this
         this._isMounted = false;
@@ -45,7 +46,7 @@ export default class OrdersList extends Component {
     async componentDidMount() {
         this._isMounted = true;
         this._isMounted && await this.getCredentials();
-        this._isMounted && this.fetchOrderList();
+        this._isMounted && this.fetchOrdersList();
     }
 
     componentWillUnmount() {
@@ -57,21 +58,26 @@ export default class OrdersList extends Component {
         const credentialsJson = JSON.parse(credentials)
         this.setState({
             base_url: credentialsJson.base_url,
-            c_key: credentialsJson.c_key,
-            c_secret: credentialsJson.c_secret,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
         })
     }
 
-    fetchOrderList = () => {
-        const { base_url, c_key, c_secret, page, searchValue } = this.state;
-        let url = `${base_url}/wp-json/wc/v3/orders?per_page=20&page=${page}&consumer_key=${c_key}&consumer_secret=${c_secret}`;
-
+    fetchOrdersList = () => {
+        const { base_url, username, password, page, searchValue } = this.state;
+        let url = `${base_url}/wp-json/dokan/v1/orders?per_page=20&page=${page}`;
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
         if (searchValue) {
             url = url.concat(`&search=${searchValue}`)
         }
         this.setState({ loading: true });
         setTimeout(() => {
-            fetch(url).then((response) => response.json())
+            fetch(url, {
+                method: 'GET',
+                headers: headers
+            }).then((response) => response.json())
                 .then((responseJson) => {
                     if (Array.isArray(responseJson) && responseJson.length) {
                         this.setState({
@@ -97,7 +103,7 @@ export default class OrdersList extends Component {
                         refreshing: false
                     })
                 });
-        }, 1500);
+        }, 1000);
     };
 
     renderListSeparator = () => {
@@ -129,7 +135,7 @@ export default class OrdersList extends Component {
             data: []
         },
             () => {
-                this.fetchOrderList();
+                this.fetchOrdersList();
             }
         )
     }
@@ -158,10 +164,7 @@ export default class OrdersList extends Component {
         return (
             <TouchableOpacity onPress={() => {
                 this.props.navigation.navigate('OrderDetails', {
-                    orderId: item.id,
-                    base_url: this.state.base_url,
-                    c_key: this.state.c_key,
-                    c_secret: this.state.c_secret
+                    orderId: item.id
                 });
             }}>
                 <View

@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import GLOBAL from './productglobal'
+import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
 
@@ -24,18 +26,42 @@ export default class ProductDetails extends Component {
         c_key = this.props.navigation.getParam('c_key');
         c_secret = this.props.navigation.getParam('c_secret');
         GLOBAL.productdetailsScreen = this;
+        this._isMounted = false;
     }
 
-    componentDidMount() {
+    async componentDidMount() {
+        this._isMounted = true;
+        this._isMounted && await this.getCredentials();
         this.focusListener = this.props.navigation.addListener('didFocus', () => {
             this.fetchProductDetails()
         });
     }
 
+    componentWillUnmount() {
+        this._isMounted = false;
+    }
+
+    getCredentials = async () => {
+        const credentials = await SecureStore.getItemAsync('credentials');
+        const credentialsJson = JSON.parse(credentials)
+        this.setState({
+            base_url: credentialsJson.base_url,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
+        })
+    }
+
     fetchProductDetails = () => {
-        const url = `${base_url}/wp-json/wc/v3/products/${productId}?consumer_key=${c_key}&consumer_secret=${c_secret}`;
+        const { base_url, username, password} = this.state;
+        const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
         this.setState({ loading: true });
-        fetch(url).then((response) => response.json())
+        fetch(url, {
+            method: 'GET',
+            headers: headers
+        }).then((response) => response.json())
             .then((responseJson) => {
                 this.setState({
                     productData: responseJson,
@@ -261,11 +287,11 @@ export default class ProductDetails extends Component {
                 onPress={() => {
                     this.props.navigation.navigate('EditProduct', {
                         productId: productId,
-                        productName: this.props.navigation.productName,
+                        productName: this.state.productData.name,
                         productData: this.state.productData,
-                        base_url: base_url,
-                        c_key: c_key,
-                        c_secret: c_secret
+                        base_url: this.state.base_url,
+                        username: this.state.username,
+                        password: this.state.password
                     });
                 }}
             >

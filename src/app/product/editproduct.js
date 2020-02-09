@@ -4,7 +4,7 @@ import {
     ScrollView, ActivityIndicator, TextInput, Picker, ToastAndroid
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import MultiSelect from 'react-native-multiple-select';
+// import MultiSelect from 'react-native-multiple-select';
 import GLOBAL from './productglobal'
 
 const config = require('../../../config.json');
@@ -21,8 +21,8 @@ export default class EditProduct extends Component {
         super(props);
         productData = this.props.navigation.getParam('productData');
         base_url = this.props.navigation.getParam('base_url');
-        c_key = this.props.navigation.getParam('c_key');
-        c_secret = this.props.navigation.getParam('c_secret');
+        username = this.props.navigation.getParam('username');
+        password = this.props.navigation.getParam('password');
         let selectedProductCategories = []
         productData.categories.forEach(item => {
             if (item.id) {
@@ -59,7 +59,7 @@ export default class EditProduct extends Component {
     }
 
     componentDidMount() {
-        this.fetchAllProductCategories()
+        // this.fetchAllProductCategories()
     }
 
     render() {
@@ -76,7 +76,7 @@ export default class EditProduct extends Component {
                 <ScrollView>
                     {this.displayProductNameSection()}
                     {this.displayProductStatusSection()}
-                    {this.displayProductCategoriesSection()}
+                    {/* {this.displayProductCategoriesSection()} */}
                     {this.displayProductPricingSection()}
                     {this.displayProductInventorySection()}
                     {this.displayProductShippingSection()}
@@ -89,38 +89,38 @@ export default class EditProduct extends Component {
 
     //Fetch Functions Below
 
-    fetchAllProductCategories = () => {
-        const url = `${base_url}/wp-json/wc/v3/products/categories?per_page=20&page=${this.state.productCategoriesPage}&consumer_key=${c_key}&consumer_secret=${c_secret}`;
-        this.setState({ loading: true });
-        fetch(url).then((response) => response.json())
-            .then((responseJson) => {
-                if (Array.isArray(responseJson) && responseJson.length > 0 && 'id' in responseJson[0]) {
-                    responseJson.forEach((item, index) => {
-                        responseJson[index].id = item.id.toString()
-                    })
-                    this.setState({
-                        hasMoreProductCategoriesToLoad: true,
-                        productCategoriesPage: this.state.productCategoriesPage + 1,
-                        productCategories: this.state.productCategories.concat(responseJson),
-                    }, this.fetchAllProductCategories);
-                } else if (Array.isArray(responseJson) && responseJson.length === 0) {
-                    this.setState({
-                        hasMoreProductCategoriesToLoad: false,
-                        loading: false
-                    })
-                } else if ('code' in responseJson) {
-                    this.setState({
-                        error: responseJson.code,
-                        loading: false
-                    })
-                }
-            }).catch((error) => {
-                this.setState({
-                    error,
-                    loading: false
-                })
-            });
-    }
+    // fetchAllProductCategories = () => {
+    //     const url = `${base_url}/wp-json/wc/v3/products/categories?per_page=20&page=${this.state.productCategoriesPage}&consumer_key=${c_key}&consumer_secret=${c_secret}`;
+    //     this.setState({ loading: true });
+    //     fetch(url).then((response) => response.json())
+    //         .then((responseJson) => {
+    //             if (Array.isArray(responseJson) && responseJson.length > 0 && 'id' in responseJson[0]) {
+    //                 responseJson.forEach((item, index) => {
+    //                     responseJson[index].id = item.id.toString()
+    //                 })
+    //                 this.setState({
+    //                     hasMoreProductCategoriesToLoad: true,
+    //                     productCategoriesPage: this.state.productCategoriesPage + 1,
+    //                     productCategories: this.state.productCategories.concat(responseJson),
+    //                 }, this.fetchAllProductCategories);
+    //             } else if (Array.isArray(responseJson) && responseJson.length === 0) {
+    //                 this.setState({
+    //                     hasMoreProductCategoriesToLoad: false,
+    //                     loading: false
+    //                 })
+    //             } else if ('code' in responseJson) {
+    //                 this.setState({
+    //                     error: responseJson.code,
+    //                     loading: false
+    //                 })
+    //             }
+    //         }).catch((error) => {
+    //             this.setState({
+    //                 error,
+    //                 loading: false
+    //             })
+    //         });
+    // }
 
     //Display Functions Below
 
@@ -174,35 +174,35 @@ export default class EditProduct extends Component {
         )
     }
 
-    displayProductCategoriesSection = () => {
-        return (
-            <View style={styles.section}>
-                <Text style={styles.titleText}>Categories</Text>
-                <View style={{marginLeft: 10, marginRight: 10}}>
-                    <MultiSelect
-                        items={this.state.productCategories}
-                        uniqueKey="id"
-                        displayKey="name"
-                        onSelectedItemsChange={selectedItems => this.setState({
-                            selectedProductCategories: selectedItems
-                        })}
-                        fixedHeight={false}
-                        hideTags
-                        ref={(component) => { this.multiSelect = component }}
-                        selectedItems={this.state.selectedProductCategories}
-                        selectText="Pick Categories"
-                        searchInputPlaceholderText="Search Category..."
-                        searchInputStyle={{ height: 40, color: 'black' }}
-                        itemTextColor='black'
-                        selectedItemTextColor={config.colors.multiSelectSelectedColor}
-                        selectedItemIconColor={config.colors.multiSelectSelectedColor}
-                        submitButtonColor={config.colors.btnColor}
-                        submitButtonText='Update Categories'
-                    />
-                </View>
-            </View>
-        )
-    }
+    // displayProductCategoriesSection = () => {
+    //     return (
+    //         <View style={styles.section}>
+    //             <Text style={styles.titleText}>Categories</Text>
+    //             <View style={{marginLeft: 10, marginRight: 10}}>
+    //                 <MultiSelect
+    //                     items={this.state.productCategories}
+    //                     uniqueKey="id"
+    //                     displayKey="name"
+    //                     onSelectedItemsChange={selectedItems => this.setState({
+    //                         selectedProductCategories: selectedItems
+    //                     })}
+    //                     fixedHeight={false}
+    //                     hideTags
+    //                     ref={(component) => { this.multiSelect = component }}
+    //                     selectedItems={this.state.selectedProductCategories}
+    //                     selectText="Pick Categories"
+    //                     searchInputPlaceholderText="Search Category..."
+    //                     searchInputStyle={{ height: 40, color: 'black' }}
+    //                     itemTextColor='black'
+    //                     selectedItemTextColor={config.colors.multiSelectSelectedColor}
+    //                     selectedItemIconColor={config.colors.multiSelectSelectedColor}
+    //                     submitButtonColor={config.colors.btnColor}
+    //                     submitButtonText='Update Categories'
+    //                 />
+    //             </View>
+    //         </View>
+    //     )
+    // }
 
     displayProductPricingSection = () => {
         return (
@@ -501,7 +501,7 @@ export default class EditProduct extends Component {
                     alignItems: 'center',
                     justifyContent: 'center',
                     height: 50,
-                    backgroundColor: config.colors.btnSubmit
+                    backgroundColor: config.colors.btnColor
                 }}
                 onPress={this.handleSubmit}
             >
@@ -541,7 +541,7 @@ export default class EditProduct extends Component {
         };
 
         const productId = productData.id;
-        const url = `${base_url}/wp-json/wc/v3/products/${productId}?consumer_key=${c_key}&consumer_secret=${c_secret}`;
+        const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
         this.setState({ loading: true });
         fetch(url, {
             method: 'PUT',

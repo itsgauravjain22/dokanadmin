@@ -4,7 +4,7 @@ import {
     Image, View, KeyboardAvoidingView, ScrollView
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-
+import Base64 from '../../utility/base64';
 const config = require('../../../config.json');
 
 export default class Login extends Component {
@@ -22,8 +22,8 @@ export default class Login extends Component {
             press: false,
             loading: false,
             base_url: null,
-            c_key: null,
-            c_secret: null,
+            username: null,
+            password: null,
         };
         this.showPass = this.showPass.bind(this);
         this.submitButton = this.submitButton.bind(this);
@@ -36,15 +36,20 @@ export default class Login extends Component {
     }
 
     checkAuthentication = async () => {
-        let url = `${this.state.base_url}/wp-json/wc/v3/system_status?consumer_key=${this.state.c_key}&consumer_secret=${this.state.c_secret}`;
+        let url = `${this.state.base_url}/wp-json/dokan/v1/reports/summary`;
 
         try {
-            let response = await fetch(url);
+            let response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Basic ${Base64.btoa(this.state.username+':'+this.state.password)}`
+                }
+            });
             if (response.ok) {
                 let credentials = {
                     'base_url': this.state.base_url,
-                    'c_key': this.state.c_key,
-                    'c_secret': this.state.c_secret,
+                    'username': this.state.username,
+                    'password': this.state.password,
                 }
                 await SecureStore.setItemAsync('credentials', JSON.stringify(credentials));
                 ToastAndroid.show('Authenticated...', ToastAndroid.LONG);
@@ -104,37 +109,37 @@ export default class Login extends Component {
                                 autoCorrect={false}
                                 autoCapitalize={'none'}
                                 returnKeyType={'next'}
-                                placeholderTextColor='#96588a'
+                                placeholderTextColor={config.colors.textInputColor}
                                 underlineColorAndroid="transparent"
                                 onChangeText={(base_url) => this.setState({ 'base_url': base_url })}
                             />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Consumer Key"
+                                placeholder="Username"
                                 autoCorrect={false}
                                 autoCapitalize={'none'}
                                 returnKeyType={'next'}
-                                placeholderTextColor='#96588a'
+                                placeholderTextColor={config.colors.textInputColor}
                                 underlineColorAndroid="transparent"
-                                onChangeText={(c_key) => this.setState({ 'c_key': c_key })}
+                                onChangeText={(username) => this.setState({ 'username': username })}
                             />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Consumer Secret"
+                                placeholder="Password"
                                 secureTextEntry={this.state.showPass}
                                 autoCorrect={false}
                                 autoCapitalize={'none'}
                                 returnKeyType={'done'}
-                                placeholderTextColor='#96588a'
+                                placeholderTextColor={config.colors.textInputColor}
                                 underlineColorAndroid="transparent"
-                                onChangeText={(value) => this.setState({ 'c_secret': value })}
+                                onChangeText={(password) => this.setState({ 'password': password })}
                             />
                             <View style={styles.showPassword}>
                                 <TouchableOpacity
                                     activeOpacity={0.7}
                                     style={{ paddingRight: 10, paddingTop: 10, paddingBottom: 15 }}
                                     onPress={this.showPass}>
-                                    <Text style={{ color: '#96588a' }}>Show Secret</Text>
+                                    <Text style={{ color: config.colors.btnColor }}>Show Secret</Text>
                                 </TouchableOpacity>
                             </View>
                             <View>
@@ -146,7 +151,6 @@ export default class Login extends Component {
                                         </Text>
                                     </TouchableOpacity>
                                 }
-
                             </View>
                         </View>
                     </View>

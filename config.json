@@ -1,20 +1,26 @@
 {
     "colors": {
-        "loadingColor": "#96588a",
-        "headerBackColor": "#96588a",
+        "loadingColor": "#F25E33",
+        "headerBackColor": "#F25E33",
         "headerTextColor": "white",
         "headerRightColor": "white",
         "tabInactiveColor": "gray",
-        "tabActiveColor": "#96588a",
+        "tabActiveColor": "#F25E33",
         "iconLightColor": "white",
-        "textInputColor": "#96588a",
-        "switchTrackColor": "#D5BCD0",
-        "switchThumbColor": "#96588a",
-        "radioCheckedColor": "#96588a",
-        "btnColor": "#96588a",
+        "textInputColor": "#F25E33",
+        "switchTrackColor": "#F8AF99",
+        "switchThumbColor": "#F25E33",
+        "radioCheckedColor": "#F25E33",
+        "btnColor": "#F25E33",
         "btnTextColor": "white",
-        "barChartDataColor": "#96588a",
-        "pieChartDataColors": ["#96588a", "#CBACC5"],
-        "multiSelectSelectedColor": "#96588a"
+        "barChartDataColor": "#F25E33",
+        "pieChartDataColors": ["#F25E33", "#F8AF99"],
+        "multiSelectSelectedColor": "#F25E33",
+        "ratingStarColor": "#FFD700"
+    },
+    "modules": {
+        "ordersModuleEnabled": true,
+        "productsModuleEnabled": true,
+        "reviewsModulesEnables": true
     }
 }

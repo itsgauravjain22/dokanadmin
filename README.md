@@ -1,6 +1,10 @@
 # dokanadmin
 A React Native woocommerce admin application for android currently in developement. I am learning react native along with creating this app. Any help or suggestion would be great.
 
+## Pre-requisite
+The app is based on [dokan rest API](https://wedevsofficial.github.io/dokan/). It needs the wordpress [Basic Auth plugin](https://github.com/WP-API/Basic-Auth) to be installed.
+
+
 ## Dev Installation Instruction
 - Clone the repo.
 - Run `npm install` and then `expo start`

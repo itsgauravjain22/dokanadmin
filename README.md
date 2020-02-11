@@ -15,6 +15,7 @@ The app is based on [dokan rest API](https://wedevsofficial.github.io/dokan/). I
 - View Product List
 - View Product Details
 - Edit Simple Product Details (Currently in Developement)
+- Delete a Product
 - View Order List
 - View Order Details including ordered Products, Shipping Address and Billing Address.
 - Order Details include WooCommerce Extra Product Options (text fields only) from [Theme Complete Plugin](https://codecanyon.net/item/woocommerce-extra-product-options/7908619)

@@ -127,7 +127,7 @@ export default class Reports extends Component {
     }
 
     fetchProductsSummaryReport = () => {
-        if (config.modules.productsModuleEnabled) {
+        if (config.permissions.products.list) {
             const { base_url, username, password } = this.state;
             const url = `${base_url}/wp-json/dokan/v1/products/summary`;
             this.setState({ isProductsSummaryDataReady: false });
@@ -162,7 +162,7 @@ export default class Reports extends Component {
     }
 
     fetchReviewsSummaryReport = () => {
-        if (config.modules.reviewsModulesEnables) {
+        if (config.permissions.reviews.list) {
             const { base_url, username, password } = this.state;
             const url = `${base_url}/wp-json/dokan/v1/reviews/summary`;
             this.setState({ isReviewsSummaryDataReady: false });
@@ -218,7 +218,7 @@ export default class Reports extends Component {
     }
 
     displayOrdersCountReportSection = () => {
-        if (config.modules.ordersModuleEnabled) {
+        if (config.permissions.orders.list) {
             let orderSummaryGraphData = []
             if (this.state.isSummaryReportDataReady && 'orders_count' in this.state.summaryReportData) {
                 Object.keys(this.state.summaryReportData.orders_count).forEach(key => {
@@ -290,7 +290,7 @@ export default class Reports extends Component {
     }
 
     displayProductsCountSection = () => {
-        if (config.modules.productsModuleEnabled) {
+        if (config.permissions.products.list) {
             let productsCountData = []
             if (this.state.isProductsSummaryDataReady) {
                 Object.keys(this.state.productsSummaryData.post_counts).forEach(key => {
@@ -362,7 +362,7 @@ export default class Reports extends Component {
     }
 
     displayReviewsCountSection = () => {
-        if (config.modules.reviewsModulesEnables) {
+        if (config.permissions.reviews.list) {
             let reviewsCountData = []
             if (this.state.isReviewsSummaryDataReady) {
                 Object.keys(this.state.reviewsSummaryData.comment_counts).forEach(key => {

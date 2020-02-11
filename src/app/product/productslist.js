@@ -27,6 +27,9 @@ export default class ProductsList extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            base_url: null,
+            username: null,
+            password: null,
             loading: false,
             hasMoreToLoad: true,
             searchValue: '',
@@ -34,9 +37,6 @@ export default class ProductsList extends Component {
             page: 1,
             error: null,
             refreshing: false,
-            base_url: null,
-            username: null,
-            password: null,
         };
         GLOBAL.productslistScreen = this;
         this._isMounted = false;

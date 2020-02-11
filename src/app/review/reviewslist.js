@@ -142,11 +142,11 @@ export default class ProductsList extends Component {
         )
     }
 
-    displayRatingStar = (starCount) => {
+    displayRatingStar = (id, starCount) => {
         let ratingStars = []
         for (let i = 1; i <= starCount; i++) {
             ratingStars.push(
-                <Ionicons name="md-star" size={20} color={config.colors.ratingStarColor} />
+                <Ionicons key={`rating_${id}_${i}`} name="md-star" size={20} color={config.colors.ratingStarColor} />
             )
         }
         return ratingStars
@@ -165,7 +165,7 @@ export default class ProductsList extends Component {
                 <View style={{ marginLeft: 10 }}>
                     <Text>{Moment(item.date_created).format('dddd, Do MMM YYYY h:m:s a')}</Text>
                     <Text style={styles.titleText}>{item.name}</Text>
-                    <Text>{this.displayRatingStar(item.rating)}</Text>
+                    <Text>{this.displayRatingStar(item.id, item.rating)}</Text>
                     <Text>{item.review}</Text>
                 </View>
             </View>

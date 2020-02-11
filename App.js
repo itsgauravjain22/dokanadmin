@@ -61,12 +61,12 @@ const ReviewsNavigator = createStackNavigator({
 })
 
 const ProductNavigator = createStackNavigator({
-  Products: ProductsList,
+  ProductsList: ProductsList,
   ProductDetails: ProductDetails,
   EditProduct: EditProduct,
   Settings: SettingNavigator,
 }, {
-  initialRouteName: 'Products',
+  initialRouteName: 'ProductsList',
   defaultNavigationOptions: {
     headerStyle: {
       backgroundColor: config.colors.headerBackColor,
@@ -79,11 +79,11 @@ const ProductNavigator = createStackNavigator({
 });
 
 const OrderNavigator = createStackNavigator({
-  Orders: OrdersList,
+  OrdersList: OrdersList,
   OrderDetails: OrderDetails,
   Settings: SettingNavigator,
 }, {
-  initialRouteName: 'Orders',
+  initialRouteName: 'OrdersList',
   defaultNavigationOptions: {
     headerStyle: {
       backgroundColor: config.colors.headerBackColor,
@@ -113,13 +113,13 @@ const reportNavigator = createStackNavigator({
 
 
 let TabNavigatorMenu = { Reports: reportNavigator }
-if (config.modules.ordersModuleEnabled) {
+if (config.permissions.orders.list) {
   TabNavigatorMenu.Orders = OrderNavigator
 }
-if (config.modules.productsModuleEnabled) {
+if (config.permissions.products.list) {
   TabNavigatorMenu.Products = ProductNavigator
 }
-if (config.modules.reviewsModulesEnables) {
+if (config.permissions.reviews.list) {
   TabNavigatorMenu.Reviews = ReviewsNavigator
 }
 

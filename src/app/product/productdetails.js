@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
-import GLOBAL from './productglobal'
+import { FloatingAction } from "react-native-floating-action";
 import Base64 from '../../utility/base64';
+import GLOBAL from './productglobal'
 
 const config = require('../../../config.json');
 
@@ -19,12 +20,12 @@ export default class ProductDetails extends Component {
         super(props);
         this.state = {
             loading: true,
+            base_url: null,
+            username: null,
+            password: null,
             productData: {}
         };
         productId = this.props.navigation.getParam('productId');
-        base_url = this.props.navigation.getParam('base_url');
-        c_key = this.props.navigation.getParam('c_key');
-        c_secret = this.props.navigation.getParam('c_secret');
         GLOBAL.productdetailsScreen = this;
         this._isMounted = false;
     }
@@ -52,7 +53,7 @@ export default class ProductDetails extends Component {
     }
 
     fetchProductDetails = () => {
-        const { base_url, username, password} = this.state;
+        const { base_url, username, password } = this.state;
         const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
         let headers = {
             'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
@@ -269,37 +270,84 @@ export default class ProductDetails extends Component {
     }
 
     displayEditProductButton = () => {
+        const actions = [
+            {
+                text: "Edit",
+                color: config.colors.btnColor,
+                icon: <Ionicons name="md-create" size={20} color={config.colors.btnTextColor} />,
+                margin: 8,
+                name: "edit_product",
+                position: 1
+            },
+            {
+                text: "Delete",
+                color: config.colors.btnColor,
+                icon: <Ionicons name="md-trash" size={20} color={config.colors.btnTextColor} />,
+                margin: 8,
+                name: "delete_product",
+                position: 2
+            }
+        ];
         return (
-            <TouchableOpacity
-                style={{
-                    borderWidth: 1,
-                    borderColor: 'rgba(0,0,0,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 60,
-                    height: 60,
-                    position: 'absolute',
-                    bottom: 15,
-                    right: 15,
-                    backgroundColor: '#fff',
-                    borderRadius: 100,
-                }}
-                onPress={() => {
-                    this.props.navigation.navigate('EditProduct', {
-                        productId: productId,
-                        productName: this.state.productData.name,
-                        productData: this.state.productData,
-                        base_url: this.state.base_url,
-                        username: this.state.username,
-                        password: this.state.password
-                    });
-                }}
-            >
-                <Ionicons name="md-create" size={30} color={config.colors.btnColor} />
-            </TouchableOpacity>
+            < FloatingAction
+                actions={actions}
+                color={config.colors.btnColor}
+                onPressItem={name => {
+                    if (name === 'edit_product') {
+                        this.props.navigation.navigate('EditProduct', {
+                            productId: productId,
+                            productName: this.state.productData.name,
+                        });
+                    } else if (name === 'delete_product') {
+                        Alert.alert(
+                            'Delete Product',
+                            'Do you really want to delete this product?',
+                            [
+                                {
+                                    text: 'No'
+                                },
+                                {
+                                    text: 'Yes',
+                                    onPress: this.deleteProduct
+                                },
+                            ],
+                            { cancelable: true },
+                        );
+                    }
+                }
+                }
+            />
         )
     }
 
+    // Delete a product
+    deleteProduct = () => {
+        const { base_url, username, password } = this.state;
+        const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
+        let headers = {
+            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+        }
+        this.setState({ loading: true });
+        fetch(url, {
+            method: 'DELETE',
+            headers: headers
+        }).then((response) => response.json())
+            .then((responseJson) => {
+                if ('id' in responseJson) {
+                    GLOBAL.productslistScreen.handleRefresh()
+                    this.props.navigation.navigate('ProductsList')
+                }
+                this.setState({
+                    error: responseJson.code || null,
+                    loading: false
+                });
+            }).catch((error) => {
+                this.setState({
+                    error,
+                    loading: false
+                })
+            });
+    }
 }
 
 const styles = StyleSheet.create({

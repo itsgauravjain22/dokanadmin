@@ -18,9 +18,19 @@
         "multiSelectSelectedColor": "#F25E33",
         "ratingStarColor": "#FFD700"
     },
-    "modules": {
-        "ordersModuleEnabled": true,
-        "productsModuleEnabled": true,
-        "reviewsModulesEnables": true
+    "permissions": {
+        "orders": {
+            "list": true,
+            "view": true,
+            "edit": true
+        },
+        "products": {
+            "list": true,
+            "view": true,
+            "edit": true
+        },
+        "reviews": {
+            "list": true
+        }
     }
 }

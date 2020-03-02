@@ -19,6 +19,13 @@
         "ratingStarColor": "#FFD700"
     },
     "permissions": {
+        "reports": {
+            "summary": true,
+            "sales": true,
+            "orders": true,
+            "products": true,
+            "reviews": true
+        },
         "orders": {
             "list": true,
             "view": true,
@@ -27,7 +34,9 @@
         "products": {
             "list": true,
             "view": true,
-            "edit": true
+            "add": true,
+            "edit": true,
+            "delete": true
         },
         "reviews": {
             "list": true

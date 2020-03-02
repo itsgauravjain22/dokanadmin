@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import GLOBAL from './productglobal'
 import { Ionicons } from '@expo/vector-icons';
 import SearchBar from '../commoncomponents/searchbar'
+import ProductsListFilters from './productslistfilters';
 import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
@@ -33,6 +34,15 @@ export default class ProductsList extends Component {
             loading: false,
             hasMoreToLoad: true,
             searchValue: '',
+            sortOrderBy: 'date',
+            sortOrder: 'desc',
+            productStatusFilter: 'any',
+            productCategory: '0',
+            productStockStatusFilter: null,
+            productMinPriceFilter: null,
+            productMaxPriceFilter: null,
+            productFeaturedFilter: false,
+            productOnSaleFilter: false,
             data: [],
             page: 1,
             error: null,
@@ -52,6 +62,28 @@ export default class ProductsList extends Component {
         this._isMounted = false;
     }
 
+    render() {
+        return (
+            <View style={{ flex: 1 }}>
+                <SearchBar onSearchPress={this.handleSearch}></SearchBar>
+                <ProductsListFilters onApplyFilter={this.handleProductsFilter}></ProductsListFilters>
+                <FlatList
+                    data={this.state.data}
+                    keyExtractor={item => item.id.toString()}
+                    refreshing={this.state.refreshing}
+                    extraData={this.state.data}
+                    onRefresh={this.handleRefresh}
+                    onEndReached={this.state.hasMoreToLoad ? this.handleLoadMore : null}
+                    onEndReachedThreshold={0.5}
+                    ItemSeparatorComponent={this.renderListSeparator}
+                    ListFooterComponent={this.renderListFooter}
+                    renderItem={this.renderItem}
+                />
+                {this.displayAddProductButton()}
+            </View>
+        );
+    }
+
     getCredentials = async () => {
         const credentials = await SecureStore.getItemAsync('credentials');
         const credentialsJson = JSON.parse(credentials)
@@ -63,21 +95,48 @@ export default class ProductsList extends Component {
     }
 
     fetchProductList = () => {
-        const { base_url, username, password, page, searchValue } = this.state;
-        let url = ''
-        let headers = {
-            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
-        }
+        const { base_url, username, password, page, searchValue, sortOrderBy, sortOrder,
+            productStatusFilter, productCategoryFilter, productStockStatusFilter,
+            productMinPriceFilter, productMaxPriceFilter, productFeaturedFilter,
+            productOnSaleFilter } = this.state;
+        let url = `${base_url}/wp-json/dokan/v1/products?per_page=20&page=${page}`
         if (searchValue) {
-            url = `${base_url}/wp-json/dokan/v1/products?per_page=20&search=${searchValue}&page=${page}`;
-        } else {
-            url = `${base_url}/wp-json/dokan/v1/products?per_page=20&page=${page}`;
+            url = url.concat(`&search=${searchValue}`);
+        }
+        if (sortOrderBy) {
+            url = url.concat(`&orderby=${sortOrderBy}`)
+        }
+        if (sortOrder) {
+            url = url.concat(`&order=${sortOrder}`)
+        }
+        if (productStatusFilter) {
+            url = url.concat(`&status=${productStatusFilter}`)
+        }
+        if (productStockStatusFilter != null) {
+            url = url.concat(`&stock_status=${productStockStatusFilter}`)
+        }
+        if (productMinPriceFilter && !isNaN(parseInt(productMinPriceFilter))) {
+            url = url.concat(`&min_price=${productMinPriceFilter}`)
+        }
+        if (productMaxPriceFilter && !isNaN(parseInt(productMaxPriceFilter))) {
+            url = url.concat(`&max_price=${productMaxPriceFilter}`)
+        }
+        if (productCategoryFilter && productCategoryFilter !== '0') {
+            url = url.concat(`&category=${productCategoryFilter}`)
+        }
+        if (productFeaturedFilter) {
+            url = url.concat(`&featured=${productFeaturedFilter}`)
+        }
+        if (productOnSaleFilter) {
+            url = url.concat(`&on_sale=${productOnSaleFilter}`)
         }
         this.setState({ loading: true });
         setTimeout(() => {
             fetch(url, {
                 method: 'GET',
-                headers: headers
+                headers: {
+                    'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
+                }
             }).then((response) => response.json())
                 .then((responseJson) => {
                     if (Array.isArray(responseJson) && responseJson.length) {
@@ -159,13 +218,34 @@ export default class ProductsList extends Component {
         })
     }
 
+    handleProductsFilter = (value) => {
+        this.setState({
+            sortOrderBy: value.sortOrderBy,
+            sortOrder: value.sortOrder,
+            productStatusFilter: value.productStatus,
+            productCategoryFilter: value.productCategory,
+            productStockStatusFilter: value.productStockStatus,
+            productMinPriceFilter: value.productMinPrice,
+            productMaxPriceFilter: value.productMaxPrice,
+            productFeaturedFilter: value.featuredProduct,
+            productOnSaleFilter: value.onSaleProduct,
+            page: 1,
+            refreshing: true,
+            data: []
+        }, () => {
+            this.fetchProductList()
+        })
+    }
+
     renderItem = ({ item }) => {
         return (
             <TouchableOpacity onPress={() => {
-                this.props.navigation.navigate('ProductDetails', {
-                    productId: item.id,
-                    productName: item.name,
-                });
+                if (config.permissions.products.view) {
+                    this.props.navigation.navigate('ProductDetails', {
+                        productId: item.id,
+                        productName: item.name,
+                    });
+                }
             }}>
                 <View style={{ flex: 1, flexDirection: 'row', backgroundColor: 'white' }}>
                     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -193,24 +273,31 @@ export default class ProductsList extends Component {
         )
     }
 
-    render() {
-        return (
-            <View style={{ flex: 1 }}>
-                <SearchBar onSearchPress={this.handleSearch}></SearchBar>
-                <FlatList
-                    data={this.state.data}
-                    keyExtractor={item => item.id.toString()}
-                    refreshing={this.state.refreshing}
-                    extraData={this.state.data}
-                    onRefresh={this.handleRefresh}
-                    onEndReached={this.state.hasMoreToLoad ? this.handleLoadMore : null}
-                    onEndReachedThreshold={0.5}
-                    ItemSeparatorComponent={this.renderListSeparator}
-                    ListFooterComponent={this.renderListFooter}
-                    renderItem={this.renderItem}
-                />
-            </View>
-        );
+    //Display Functions Below
+
+    displayAddProductButton = () => {
+        if (config.permissions.products.add) {
+            return (
+                <TouchableOpacity
+                    style={{
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: 50,
+                        backgroundColor: config.colors.btnColor
+                    }}
+                    onPress={() => {
+                        this.props.navigation.navigate('AddProduct')
+                    }}
+                >
+                    <Text style={{
+                        color: config.colors.btnTextColor,
+                        fontWeight: 'bold'
+                    }}>
+                        Add Product
+                </Text>
+                </TouchableOpacity >
+            )
+        } else return <></>
     }
 }
 

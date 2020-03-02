@@ -51,16 +51,6 @@ export default class Reports extends Component {
         this._isMounted && this.fetchAllReports()
     }
 
-    getCredentials = async () => {
-        const credentials = await SecureStore.getItemAsync('credentials');
-        const credentialsJson = JSON.parse(credentials)
-        this.setState({
-            base_url: credentialsJson.base_url,
-            username: credentialsJson.username,
-            password: credentialsJson.password,
-        })
-    }
-
     render() {
         return (
             <ScrollView
@@ -74,11 +64,22 @@ export default class Reports extends Component {
                 }
             >
                 {this.displaySummaryReportSection()}
+                {this.displaySalesReportSection()}
                 {this.displayOrdersCountReportSection()}
                 {this.displayProductsCountSection()}
                 {this.displayReviewsCountSection()}
             </ScrollView>
         );
+    }
+
+    getCredentials = async () => {
+        const credentials = await SecureStore.getItemAsync('credentials');
+        const credentialsJson = JSON.parse(credentials)
+        this.setState({
+            base_url: credentialsJson.base_url,
+            username: credentialsJson.username,
+            password: credentialsJson.password,
+        })
     }
 
     //Fetch Function Below
@@ -127,7 +128,7 @@ export default class Reports extends Component {
     }
 
     fetchProductsSummaryReport = () => {
-        if (config.permissions.products.list) {
+        if (config.permissions.reports.products) {
             const { base_url, username, password } = this.state;
             const url = `${base_url}/wp-json/dokan/v1/products/summary`;
             this.setState({ isProductsSummaryDataReady: false });
@@ -162,7 +163,7 @@ export default class Reports extends Component {
     }
 
     fetchReviewsSummaryReport = () => {
-        if (config.permissions.reviews.list) {
+        if (config.permissions.reports.reviews) {
             const { base_url, username, password } = this.state;
             const url = `${base_url}/wp-json/dokan/v1/reviews/summary`;
             this.setState({ isReviewsSummaryDataReady: false });
@@ -199,26 +200,47 @@ export default class Reports extends Component {
     //Display Functions Below
 
     displaySummaryReportSection = () => {
-        return (
-            <View style={styles.section}>
-                <Text style={styles.titleText}>Store Summary</Text>
-                {this.state.isSummaryReportDataReady
-                    ? <View>
-                        <Text>Total Pageviews: {this.state.summaryReportData.pageviews}</Text>
-                        <Text>Total Sales: {this.state.summaryReportData.sales}</Text>
-                    </View>
-                    : <View style={{
-                        flex: -1, justifyContent: "center",
-                        alignContent: "center", padding: 20
-                    }}>
-                        <ActivityIndicator color={config.colors.loadingColor} size='large' />
-                    </View>}
-            </View>
-        )
+        if (config.permissions.reports.summary) {
+            return (
+                <View style={styles.section}>
+                    <Text style={styles.titleText}>Store Summary</Text>
+                    {this.state.isSummaryReportDataReady
+                        ? <View>
+                            <Text>Total Pageviews: {this.state.summaryReportData.pageviews}</Text>
+                        </View>
+                        : <View style={{
+                            flex: -1, justifyContent: "center",
+                            alignContent: "center", padding: 20
+                        }}>
+                            <ActivityIndicator color={config.colors.loadingColor} size='large' />
+                        </View>}
+                </View>
+            )
+        }
+    }
+
+    displaySalesReportSection = () => {
+        if (config.permissions.reports.sales) {
+            return (
+                <View style={styles.section}>
+                    <Text style={styles.titleText}>Sales</Text>
+                    {this.state.isSummaryReportDataReady
+                        ? <View>
+                            <Text>Total Sales: {this.state.summaryReportData.sales}</Text>
+                        </View>
+                        : <View style={{
+                            flex: -1, justifyContent: "center",
+                            alignContent: "center", padding: 20
+                        }}>
+                            <ActivityIndicator color={config.colors.loadingColor} size='large' />
+                        </View>}
+                </View>
+            )
+        }
     }
 
     displayOrdersCountReportSection = () => {
-        if (config.permissions.orders.list) {
+        if (config.permissions.reports.orders) {
             let orderSummaryGraphData = []
             if (this.state.isSummaryReportDataReady && 'orders_count' in this.state.summaryReportData) {
                 Object.keys(this.state.summaryReportData.orders_count).forEach(key => {
@@ -290,7 +312,7 @@ export default class Reports extends Component {
     }
 
     displayProductsCountSection = () => {
-        if (config.permissions.products.list) {
+        if (config.permissions.reports.products) {
             let productsCountData = []
             if (this.state.isProductsSummaryDataReady) {
                 Object.keys(this.state.productsSummaryData.post_counts).forEach(key => {
@@ -362,7 +384,7 @@ export default class Reports extends Component {
     }
 
     displayReviewsCountSection = () => {
-        if (config.permissions.reviews.list) {
+        if (config.permissions.reports.reviews) {
             let reviewsCountData = []
             if (this.state.isReviewsSummaryDataReady) {
                 Object.keys(this.state.reviewsSummaryData.comment_counts).forEach(key => {

@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Clipboard, Image, ScrollView, ActivityIndicator, Modal, ToastAndroid, Alert } from 'react-native';
+import {
+    StyleSheet, Text, View, TouchableOpacity, Clipboard, Image,
+    ScrollView, RefreshControl, ActivityIndicator, Modal, ToastAndroid
+} from 'react-native';
 import Moment from 'moment';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
@@ -61,27 +64,27 @@ export default class OrderDetails extends Component {
                 </View>
             )
         } else {
-            if (!this.state.error) {
-                return (
-                    <ScrollView style={{ flex: 1 }}>
-                        {this.displayOrderDataSection()}
-                        {this.displayProductSection()}
-                        {this.displayPaymentSection()}
-                        {this.displayShippingDetailsSection()}
-                        {this.displayBillingDetailsSection()}
-                    </ScrollView>
-                );
-            } else {
-                return (
-                    <View>
-                        <Text>
-                            {this.state.error.toString()}
-                        </Text>
-                    </View>
-                )
-            }
+            return (
+                <ScrollView
+                    style={{ flex: 1 }}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={false}
+                            onRefresh={this.fetchOrderDetails}
+                        />
+                    }
+                >
+                    {this.displayOrderDataSection()}
+                    {this.displayProductSection()}
+                    {this.displayPaymentSection()}
+                    {this.displayShippingDetailsSection()}
+                    {this.displayBillingDetailsSection()}
+                </ScrollView>
+            );
         }
     }
+
+    // Fetch Functions Below
 
     fetchOrderDetails = () => {
         const { base_url, username, password } = this.state;
@@ -95,7 +98,6 @@ export default class OrderDetails extends Component {
             headers: headers
         }).then((response) => response.json())
             .then((responseJson) => {
-                console.log(responseJson)
                 this.setState({
                     orderData: responseJson,
                     error: responseJson.code || null,
@@ -119,19 +121,26 @@ export default class OrderDetails extends Component {
             headers: headers
         }).then(response => response.json())
             .then(responseJson => {
-                let orderStatusMap = new Map();
-                if (responseJson) {
-                    Object.keys(responseJson).forEach(key => {
-                        if (key != 'total') {
-                            orderStatusMap.set(key, key)
-                        }
-                    })
+                if ('code' in responseJson) {
+                    this.setState({
+                        error: responseJson.code
+                    }, this.fetchOrderProductImages)
+                    ToastAndroid.show(`Can't fetch other order statuses. Error: ${responseJson.code}`, ToastAndroid.LONG);
+                } else {
+                    let orderStatusMap = new Map();
+                    if (responseJson) {
+                        Object.keys(responseJson).forEach(key => {
+                            if (key != 'total') {
+                                orderStatusMap.set(key, key)
+                            }
+                        })
+                    }
+                    this.setState({
+                        orderStatusOptions: [...orderStatusMap],
+                        orderStatusValue: this.state.orderData.status,
+                        loading: false,
+                    }, this.fetchOrderProductImages)
                 }
-                this.setState({
-                    orderStatusOptions: [...orderStatusMap],
-                    orderStatusValue: this.state.orderData.status,
-                    loading: false,
-                }, this.fetchOrderProductImages)
             })
     }
 
@@ -386,7 +395,7 @@ export default class OrderDetails extends Component {
                 <Text>Payment Gateway: {this.state.orderData.payment_method_title}</Text>
                 <Text style={{ fontWeight: 'bold' }}>Order Total: {this.getCurrencySymbol()}{this.state.orderData.total}</Text>
                 <Text>Product Total: {this.getCurrencySymbol()}{this.getProductTotal()}</Text>
-                <Text>Shipping:{this.getCurrencySymbol()}{this.state.orderData.shipping_total}</Text>
+                <Text>Shipping: {this.getCurrencySymbol()}{this.state.orderData.shipping_total}</Text>
                 <Text>Taxes: {this.getCurrencySymbol()}{this.state.orderData.total_tax}</Text>
                 {this.getTMProductOptionsFees()}
             </View>

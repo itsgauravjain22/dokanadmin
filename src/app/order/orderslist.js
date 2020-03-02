@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import GLOBAL from './orderglobal'
 import SearchBar from '../commoncomponents/searchbar'
+import OrdersListFilters from './orderslistfilters'
 import Base64 from '../../utility/base64';
 
 const config = require('../../../config.json');
@@ -31,6 +32,7 @@ export default class OrdersList extends Component {
             loading: false,
             hasMoreToLoad: true,
             searchValue: '',
+            orderStatusFilter: null,
             data: [],
             page: 1,
             error: null,
@@ -64,13 +66,16 @@ export default class OrdersList extends Component {
     }
 
     fetchOrdersList = () => {
-        const { base_url, username, password, page, searchValue } = this.state;
+        const { base_url, username, password, page, searchValue, orderStatusFilter } = this.state;
         let url = `${base_url}/wp-json/dokan/v1/orders?per_page=20&page=${page}`;
         let headers = {
             'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
         }
         if (searchValue) {
             url = url.concat(`&search=${searchValue}`)
+        }
+        if (orderStatusFilter) {
+            url = url.concat(`&status=${orderStatusFilter}`)
         }
         this.setState({ loading: true });
         setTimeout(() => {
@@ -144,7 +149,7 @@ export default class OrdersList extends Component {
         this.setState({
             page: this.state.page + 1,
         }, () => {
-            this.fetchOrderList();
+            this.fetchOrdersList();
         }
         )
     }
@@ -156,7 +161,18 @@ export default class OrdersList extends Component {
             refreshing: true,
             data: []
         }, () => {
-            this.fetchOrderList()
+            this.fetchOrdersList()
+        })
+    }
+
+    handleFilterByOrderStatus = (value) => {
+        this.setState({
+            orderStatusFilter: value,
+            page: 1,
+            refreshing: true,
+            data: []
+        }, () => {
+            this.fetchOrdersList()
         })
     }
 
@@ -190,6 +206,7 @@ export default class OrdersList extends Component {
         return (
             <View style={{ flex: 1 }}>
                 <SearchBar onSearchPress={this.handleSearch}></SearchBar>
+                <OrdersListFilters onApplyFilter={this.handleFilterByOrderStatus}></OrdersListFilters>
                 <FlatList
                     data={this.state.data}
                     keyExtractor={item => item.id.toString()}

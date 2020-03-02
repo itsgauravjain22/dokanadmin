@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, Image, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
-import { FloatingAction } from "react-native-floating-action";
+import ActionButton from 'react-native-action-button';
 import Base64 from '../../utility/base64';
 import GLOBAL from './productglobal'
 
@@ -33,13 +33,49 @@ export default class ProductDetails extends Component {
     async componentDidMount() {
         this._isMounted = true;
         this._isMounted && await this.getCredentials();
-        this.focusListener = this.props.navigation.addListener('didFocus', () => {
-            this.fetchProductDetails()
-        });
+        this._isMounted && this.fetchProductDetails()
     }
 
     componentWillUnmount() {
         this._isMounted = false;
+    }
+
+    render() {
+        if (this.state.loading) {
+            return (
+                <View style={{ flex: 1, justifyContent: "center", alignContent: "center", padding: 20 }}>
+                    <ActivityIndicator color={config.colors.loadingColor} size='large' />
+                </View>
+            )
+        }
+
+        return (
+            <View style={{ flex: 1 }}>
+                {this.state.loading ?
+                    <ActivityIndicator size='large' color={config.colors.loadingColor} />
+                    : <View style={{ flex: 1 }}>
+                        <ScrollView
+                            style={{ flex: 1 }}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={false}
+                                    onRefresh={this.fetchProductDetails}
+                                />
+                            }
+                        >
+                            {this.displayProductImages()}
+                            {this.displayProductBasicDetails()}
+                            {this.displayProductPricingDetails()}
+                            {this.displayProductInventoryDetails()}
+                            {this.displayProductShippingDetails()}
+                            {this.displayProductCategoriesDetails()}
+                            {this.displayProductAttributesDetails()}
+                        </ScrollView>
+                        {this.displayEditProductButton()}
+                    </View>
+                }
+            </View>
+        );
     }
 
     getCredentials = async () => {
@@ -51,6 +87,8 @@ export default class ProductDetails extends Component {
             password: credentialsJson.password,
         })
     }
+
+    //Fetch Functions Below
 
     fetchProductDetails = () => {
         const { base_url, username, password } = this.state;
@@ -158,35 +196,6 @@ export default class ProductDetails extends Component {
         return <></>
     }
 
-    render() {
-        if (this.state.loading) {
-            return (
-                <View style={{ flex: 1, justifyContent: "center", alignContent: "center", padding: 20 }}>
-                    <ActivityIndicator color={config.colors.loadingColor} size='large' />
-                </View>
-            )
-        }
-
-        return (
-            <View style={{ flex: 1 }}>
-                {this.state.loading ? <ActivityIndicator size='large' color={config.colors.loadingColor} /> :
-                    <View style={{ flex: 1 }}>
-                        <ScrollView style={{ flex: 1 }}>
-                            {this.displayProductImages()}
-                            {this.displayProductBasicDetails()}
-                            {this.displayProductPricingDetails()}
-                            {this.displayProductInventoryDetails()}
-                            {this.displayProductShippingDetails()}
-                            {this.displayProductCategoriesDetails()}
-                            {this.displayProductAttributesDetails()}
-                        </ScrollView>
-                        {this.displayEditProductButton()}
-                    </View>
-                }
-            </View>
-        );
-    }
-
     //Display Functions Below
 
     displayProductImages = () => {
@@ -270,54 +279,61 @@ export default class ProductDetails extends Component {
     }
 
     displayEditProductButton = () => {
-        const actions = [
-            {
-                text: "Edit",
-                color: config.colors.btnColor,
-                icon: <Ionicons name="md-create" size={20} color={config.colors.btnTextColor} />,
-                margin: 8,
-                name: "edit_product",
-                position: 1
-            },
-            {
-                text: "Delete",
-                color: config.colors.btnColor,
-                icon: <Ionicons name="md-trash" size={20} color={config.colors.btnTextColor} />,
-                margin: 8,
-                name: "delete_product",
-                position: 2
-            }
-        ];
-        return (
-            < FloatingAction
-                actions={actions}
-                color={config.colors.btnColor}
-                onPressItem={name => {
-                    if (name === 'edit_product') {
-                        this.props.navigation.navigate('EditProduct', {
-                            productId: productId,
-                            productName: this.state.productData.name,
-                        });
-                    } else if (name === 'delete_product') {
-                        Alert.alert(
-                            'Delete Product',
-                            'Do you really want to delete this product?',
-                            [
-                                {
-                                    text: 'No'
-                                },
-                                {
-                                    text: 'Yes',
-                                    onPress: this.deleteProduct
-                                },
-                            ],
-                            { cancelable: true },
-                        );
-                    }
-                }
-                }
-            />
-        )
+        if (config.permissions.products.edit || config.permissions.products.delete) {
+            return (
+                <ActionButton
+                    buttonColor={config.colors.btnColor}
+                    hideShadow={true}
+                >
+                    {config.permissions.products.edit
+                        ? <ActionButton.Item
+                            buttonColor={config.colors.btnColor}
+                            title="Edit"
+                            size={35}
+                            textContainerStyle={{ height: 27 }}
+                            textStyle={{ fontSize: 16 }}
+                            spaceBetween={8}
+                            onPress={() => {
+                                this.props.navigation.navigate('EditProduct', {
+                                    productId: productId,
+                                    productName: this.state.productData.name,
+                                })
+                            }}
+                        >
+                            <Ionicons name="md-create" size={20} color={config.colors.btnTextColor} />
+                        </ActionButton.Item>
+                        : null}
+                    {config.permissions.products.delete
+                        ? <ActionButton.Item
+                            buttonColor='red'
+                            title="Delete"
+                            size={35}
+                            textContainerStyle={{ height: 27 }}
+                            textStyle={{ fontSize: 16 }}
+                            spaceBetween={8}
+                            onPress={() => {
+                                Alert.alert(
+                                    'Delete Product',
+                                    'Do you really want to delete this product?',
+                                    [
+                                        {
+                                            text: 'No'
+                                        },
+                                        {
+                                            text: 'Yes',
+                                            onPress: this.deleteProduct
+                                        },
+                                    ],
+                                    { cancelable: true },
+                                );
+                            }}
+                        >
+                            <Ionicons name="md-trash" size={20} color={config.colors.btnTextColor} />
+                        </ActionButton.Item>
+                        : null}
+                </ActionButton>
+            )
+        } else return null
     }
 
     // Delete a product

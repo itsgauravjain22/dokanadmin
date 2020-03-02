@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
-import { createAppContainer, createSwitchNavigator } from 'react-navigation';
-import { createBottomTabNavigator } from 'react-navigation-tabs';
-import { createStackNavigator } from 'react-navigation-stack';
+import React, { Component } from 'react'
+import { createAppContainer, createSwitchNavigator } from 'react-navigation'
+import { createBottomTabNavigator } from 'react-navigation-tabs'
+import { createStackNavigator } from 'react-navigation-stack'
 import { Ionicons } from '@expo/vector-icons';
 import * as Sentry from 'sentry-expo';
 import AuthLoadingScreen from './src/app/account/auth'
@@ -9,9 +9,10 @@ import Login from './src/app/account/login'
 import Reports from './src/app/report/reports'
 import ProductsList from './src/app/product/productslist'
 import ProductDetails from './src/app/product/productdetails'
+import AddProduct from './src/app/product/addproduct'
 import EditProduct from './src/app/product/editproduct'
 import OrdersList from './src/app/order/orderslist'
-import OrderDetails from './src/app/order/orderdetails';
+import OrderDetails from './src/app/order/orderdetails'
 import ReviewsList from './src/app/review/reviewslist'
 import Settings from './src/app/setting/settings'
 
@@ -63,6 +64,7 @@ const ReviewsNavigator = createStackNavigator({
 const ProductNavigator = createStackNavigator({
   ProductsList: ProductsList,
   ProductDetails: ProductDetails,
+  AddProduct: AddProduct,
   EditProduct: EditProduct,
   Settings: SettingNavigator,
 }, {

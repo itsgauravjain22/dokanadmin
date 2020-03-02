@@ -12,17 +12,16 @@ import GLOBAL from './productglobal'
 
 const config = require('../../../config.json');
 
-export default class EditProduct extends Component {
+export default class AddProduct extends Component {
 
     static navigationOptions = ({ navigation }) => {
         return {
-            title: 'Edit Product',
+            title: 'Add Product',
         };
     };
 
     constructor(props) {
         super(props);
-        productId = this.props.navigation.getParam('productId');
         this.state = {
             loading: true,
             error: null,
@@ -122,7 +121,8 @@ export default class EditProduct extends Component {
                 } else if (Array.isArray(responseJson) && responseJson.length === 0) {
                     this.setState({
                         hasMoreProductCategoriesToLoad: false,
-                    }, this.fetchProductDetails)
+                        loading: false
+                    })
                 } else if ('code' in responseJson) {
                     this.setState({
                         error: responseJson.code,
@@ -139,139 +139,6 @@ export default class EditProduct extends Component {
             });
     }
 
-    fetchProductDetails = () => {
-        const { base_url, username, password } = this.state;
-        const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
-        let headers = {
-            'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`
-        }
-        this.setState({ loading: true });
-        fetch(url, {
-            method: 'GET',
-            headers: headers
-        }).then((response) => response.json())
-            .then((responseJson) => {
-                if (!'code' in responseJson) {
-                    this.setState({
-                        productData: responseJson
-                    })
-                }
-                if ('name' in responseJson) {
-                    this.setState({
-                        name: responseJson.name
-                    })
-                }
-                if ('sku' in responseJson) {
-                    this.setState({
-                        sku: responseJson.sku
-                    })
-                }
-                if ('status' in responseJson) {
-                    this.setState({
-                        status: responseJson.status
-                    })
-                }
-                if ('regular_price' in responseJson) {
-                    this.setState({
-                        regularPrice: responseJson.regular_price
-                    })
-                }
-                if ('sale_price' in responseJson) {
-                    this.setState({
-                        salePrice: responseJson.sale_price
-                    })
-                }
-                if ('date_on_sale_from' in responseJson) {
-                    this.setState({
-                        dateOnSaleFrom: responseJson.date_on_sale_from ? responseJson.date_on_sale_from : ''
-                    })
-                }
-                if ('date_on_sale_to' in responseJson) {
-                    this.setState({
-                        dateOnSaleTo: responseJson.date_on_sale_to ? responseJson.date_on_sale_to : ''
-                    })
-                }
-                if ('manage_stock' in responseJson) {
-                    this.setState({
-                        manageStock: responseJson.manage_stock
-                    })
-                }
-                if ('stock_status' in responseJson) {
-                    this.setState({
-                        stockStatus: responseJson.stock_status
-                    })
-                }
-                if ('stock_quantity' in responseJson) {
-                    this.setState({
-                        stockQuantity: responseJson.stock_quantity
-                    })
-                }
-                if ('weight' in responseJson) {
-                    this.setState({
-                        weight: responseJson.weight
-                    })
-                }
-                if ("dimensions" in responseJson) {
-                    if ('length' in responseJson.dimensions) {
-                        this.setState({
-                            length: responseJson.dimensions.length
-                        })
-                    }
-                    if ('width' in responseJson.dimensions) {
-                        this.setState({
-                            width: responseJson.dimensions.width
-                        })
-                    }
-                    if ('height' in responseJson.dimensions) {
-                        this.setState({
-                            height: responseJson.dimensions.height
-                        })
-                    }
-                }
-                if ('type' in responseJson) {
-                    this.setState({
-                        type: responseJson.type
-                    })
-                }
-                if ('virtual' in responseJson) {
-                    this.setState({
-                        virtual: responseJson.virtual
-                    })
-                }
-                if ('downloadable' in responseJson) {
-                    this.setState({
-                        downloadable: responseJson.downloadable
-                    })
-                }
-                if ('categories' in responseJson && Array.isArray(responseJson.categories) && responseJson.categories.length) {
-                    let selectedProductCategories = []
-                    responseJson.categories.forEach(item => {
-                        if (item.id) {
-                            selectedProductCategories.push(item.id.toString())
-                        }
-                    })
-                    this.setState({
-                        selectedProductCategories: selectedProductCategories
-                    })
-                }
-                if ('code' in responseJson) {
-                    this.setState({
-                        error: responseJson.code
-                    })
-                    ToastAndroid.show('Error fetching product details. Error Code: ' + responseJson.code, ToastAndroid.LONG)
-                }
-                this.setState({
-                    loading: false,
-                })
-            }).catch((error) => {
-                this.setState({
-                    error,
-                    loading: false
-                })
-                ToastAndroid.show('Error fetching product details. Error: ' + error, ToastAndroid.LONG)
-            });
-    }
-
     //Display Functions Below
 
     displayProductBasicDetailsSection = () => {
@@ -282,6 +149,7 @@ export default class EditProduct extends Component {
                     <View style={styles.sectionCol}>
                         <FloatingLabel
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
                             value={this.state.name ? this.state.name.toString() : ''}
                             onChangeText={(value) => {
@@ -294,6 +162,7 @@ export default class EditProduct extends Component {
                     <View style={styles.sectionCol}>
                         <FloatingLabel
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
                             value={this.state.sku ? this.state.sku.toString() : ''}
                             onChangeText={(value) => {
@@ -387,8 +256,8 @@ export default class EditProduct extends Component {
                 <View style={styles.sectionRow}>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
                             keyboardType='numeric'
                             value={this.state.regularPrice ? this.state.regularPrice.toString() : ''}
@@ -405,8 +274,8 @@ export default class EditProduct extends Component {
                 <View style={styles.sectionRow}>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
                             keyboardType='numeric'
                             value={this.state.salePrice ? this.state.salePrice.toString() : ''}
@@ -513,11 +382,11 @@ export default class EditProduct extends Component {
                     ? <View style={styles.sectionRow}>
                         <View style={styles.sectionCol}>
                             <FloatingLabel
-                                labelStyle={styles.labelInput}
                                 inputStyle={styles.floatingInput}
+                                labelStyle={styles.labelInput}
                                 style={styles.formInput}
                                 keyboardType='numeric'
-                                value={this.state.stockQuantity ? this.state.stockQuantity.toString() : null}
+                                value={this.state.stockQuantity ? this.state.stockQuantity.toString() : ''}
                                 onChangeText={(value) => {
                                     if (!isNaN(parseInt(value))) {
                                         this.setState({ stockQuantity: parseInt(value) })
@@ -540,11 +409,11 @@ export default class EditProduct extends Component {
                 <View style={styles.sectionRow}>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
-                            keyboardType='numeric'
                             value={this.state.weight}
+                            keyboardType='numeric'
                             onChangeText={(value) => {
                                 if (!isNaN(parseInt(value))) {
                                     this.setState({ weight: value })
@@ -558,11 +427,11 @@ export default class EditProduct extends Component {
                 <View style={styles.sectionRow}>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
-                            keyboardType='numeric'
                             value={this.state.length}
+                            keyboardType='numeric'
                             onChangeText={(value) => {
                                 if (!isNaN(parseInt(value))) {
                                     this.setState({ length: value })
@@ -574,11 +443,11 @@ export default class EditProduct extends Component {
                     </View>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
-                            keyboardType='numeric'
                             value={this.state.width}
+                            keyboardType='numeric'
                             onChangeText={(value) => {
                                 if (!isNaN(parseInt(value))) {
                                     this.setState({ width: value })
@@ -590,8 +459,8 @@ export default class EditProduct extends Component {
                     </View>
                     <View style={styles.sectionCol}>
                         <FloatingLabel
-                            labelStyle={styles.labelInput}
                             inputStyle={styles.floatingInput}
+                            labelStyle={styles.labelInput}
                             style={styles.formInput}
                             keyboardType='numeric'
                             value={this.state.height}
@@ -609,7 +478,7 @@ export default class EditProduct extends Component {
         )
     }
 
-    displayProductTypeSection = () => {
+    ddisplayProductTypeSection = () => {
         return (
             <View style={styles.section}>
                 <Text style={styles.titleText}>Type</Text>
@@ -701,7 +570,7 @@ export default class EditProduct extends Component {
             "manage_stock": this.state.manageStock,
             "stock_status": this.state.stockStatus,
             "weight": this.state.weight,
-            "dimensions": { "length": this.state.length, "width": this.state.width, "height": this.state.height },
+            "dimensions": { "length": `${this.state.length}`, "width": `${this.state.width}`, "height": `${this.state.height}` },
             "type": this.state.type,
             "virtual": this.state.virtual,
             "downloadable": this.state.downloadable,
@@ -711,36 +580,38 @@ export default class EditProduct extends Component {
             updatedProductObject.stock_quantity = this.state.stockQuantity
         }
         const { base_url, username, password } = this.state;
-        const url = `${base_url}/wp-json/dokan/v1/products/${productId}`;
+        const url = `${base_url}/wp-json/dokan/v1/products`;
         this.setState({ loading: true });
         let headers = {
             'Authorization': `Basic ${Base64.btoa(username + ':' + password)}`,
             'Content-Type': 'application/json'
         }
         fetch(url, {
-            method: 'PUT',
+            method: 'POST',
             headers: headers,
             body: JSON.stringify(updatedProductObject),
         }).then((response) => response.json())
             .then((responseJson) => {
-                this.setState({
-                    error: responseJson.code || null,
-                    loading: false,
-                });
                 if ("code" in responseJson) {
-                    ToastAndroid.show(`Product Not Updated. Error Code: ${responseJson.code}`, ToastAndroid.LONG);
+                    this.setState({
+                        error: responseJson.code || null,
+                        loading: false,
+                    });
+                    ToastAndroid.show(`Product not added. Code: ${responseJson.code}`, ToastAndroid.LONG);
                 } else {
-                    ToastAndroid.show('Product Updated', ToastAndroid.LONG);
-                    GLOBAL.productdetailsScreen.fetchProductDetails()
+                    this.setState({
+                        loading: false,
+                    })
+                    ToastAndroid.show('Product Added', ToastAndroid.LONG);
                     GLOBAL.productslistScreen.handleRefresh()
-                    this.props.navigation.navigate('ProductDetails')
+                    this.props.navigation.navigate('ProductsList')
                 }
             }).catch((error) => {
                 this.setState({
                     error,
                     loading: false,
                 })
-                ToastAndroid.show(`Product Not Updated. Error: ${error}`, ToastAndroid.LONG);
+                ToastAndroid.show(`Product not added. Error: ${responseJson.code}`, ToastAndroid.LONG);
             });
     }
 }
@@ -767,7 +638,7 @@ const styles = StyleSheet.create({
         paddingRight: 10
     },
     labelInput: {
-
+        // fontSize: 16
     },
     floatingInput: {
         borderWidth: 0,
